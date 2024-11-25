@@ -8,6 +8,7 @@ import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import ScheduleScreen from "./screens/ScheduleScreen";
 import AddScheduleScreen from "./screens/AddScheduleScreen";
+import {auth} from './firebase';
 
 // Create stack and tab navigators
 const Stack = createStackNavigator();
@@ -15,6 +16,8 @@ const Tab = createBottomTabNavigator();
 
 // Tab Navigator for Schedule and Add Event
 const TabNavigator = () => {
+  const userId = auth.currentUser?.uid; // Dynamically fetch userId
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -34,11 +37,13 @@ const TabNavigator = () => {
       <Tab.Screen
         name="Schedule"
         component={ScheduleScreen}
+        initialParams={{ userId }} // Pass userId here
         options={{ headerShown: false }}
       />
       <Tab.Screen
         name="Add Event"
         component={AddScheduleScreen}
+        initialParams={{ userId }} // Pass userId here as well
         options={{ headerShown: false }}
       />
     </Tab.Navigator>

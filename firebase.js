@@ -1,6 +1,17 @@
 import { initializeApp } from "firebase/app";
 import { getReactNativePersistence, initializeAuth } from "firebase/auth";
-import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { 
+  getFirestore, 
+  collection, 
+  addDoc, 
+  getDocs, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  query, 
+  where, 
+  onSnapshot 
+} from "firebase/firestore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const firebaseConfig = {
@@ -29,12 +40,20 @@ const addSchedule = async (userId, scheduleData) => {
     return;
   }
 
-  if (!scheduleData || !scheduleData.title || !scheduleData.date || !scheduleData.time) {
+  // Validate required fields
+  if (
+    !scheduleData ||
+    !scheduleData.title ||
+    !scheduleData.date ||
+    !scheduleData.startTime ||
+    !scheduleData.endTime
+  ) {
     console.error("Error: Invalid schedule data", scheduleData);
     return;
   }
 
   try {
+    // Add the schedule to Firestore
     const docRef = await addDoc(collection(db, "schedules"), {
       userId,
       ...scheduleData,
@@ -53,12 +72,29 @@ const getSchedules = async (userId) => {
 
     const schedules = [];
     querySnapshot.forEach((doc) => {
-      schedules.push({ id: doc.id, ...doc.data() });
+      schedules.push({ id: doc.id, ...doc.data() }); // Ensure data includes startTime, endTime, etc.
     });
 
     return schedules;
   } catch (e) {
-    console.error("Error fetching schedules:", e);
+    console.error("Error fetching schedules:", e.message);
+    return [];
+  }
+};
+
+// Real-time version of getSchedules
+const listenSchedules = (userId, callback) => {
+  try {
+    const q = query(collection(db, "schedules"), where("userId", "==", userId));
+    return onSnapshot(q, (snapshot) => {
+      const schedules = [];
+      snapshot.forEach((doc) => {
+        schedules.push({ id: doc.id, ...doc.data() }); // Ensure the structure is correct
+      });
+      callback(schedules);
+    });
+  } catch (e) {
+    console.error("Error listening to schedules:", e.message);
   }
 };
 
@@ -73,4 +109,4 @@ const deleteSchedule = async (scheduleId) => {
 };
 
 // Export Auth and Firestore
-export { auth, addSchedule, getSchedules, updateSchedule, deleteSchedule };
+export { auth, db, addSchedule, getSchedules, listenSchedules, updateSchedule, deleteSchedule };

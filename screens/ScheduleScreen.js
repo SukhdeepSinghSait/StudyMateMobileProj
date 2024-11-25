@@ -1,64 +1,50 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, LogBox } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, LogBox, Pressable, Alert } from 'react-native';
 import { ExpandableCalendar, AgendaList, CalendarProvider } from 'react-native-calendars';
-import { getSchedules, deleteSchedule } from '../firebase'; // Import Firestore functions
+import { listenSchedules, deleteSchedule } from '../firebase'; // Import Firestore functions
 
 // Suppressing specific warning for ExpandableCalendar defaultProps deprecation
 LogBox.ignoreLogs([
   'Warning: ExpandableCalendar: Support for defaultProps will be removed from function components in a future major release.',
 ]);
 
-const ScheduleScreen = ({ userId }) => {
+const ScheduleScreen = ({ route }) => {
+  const { userId } = route.params || {}; // Safely access params
+  if (!userId) {
+    return <Text>User ID is not available!</Text>; // Error handling for missing userId
+  }
   const [items, setItems] = useState([]);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
-    // Adding dummy schedules for testing
-    const today = new Date().toISOString().split('T')[0]; // Today's date in "YYYY-MM-DD" format
-    const dummySchedules = [
-      {
-        title: 'Morning Yoga',
-        date: today,
-        time: '07:00 AM',
-        description: 'Start the day with a relaxing yoga session.',
-        id: '1',
-      },
-      {
-        title: 'Team Meeting',
-        date: today,
-        time: '10:00 AM',
-        description: 'Weekly sync with the project team.',
-        id: '2',
-      },
-      {
-        title: 'Doctor Appointment',
-        date: today,
-        time: '02:00 PM',
-        description: 'Regular check-up at Health Center.',
-        id: '3',
-      },
-    ];
-    setItems(dummySchedules);
-  }, []);
+    const unsubscribe = listenSchedules(userId, (schedules) => {
+      setItems(schedules);
+    });
+
+    return () => unsubscribe && unsubscribe(); // Cleanup listener on unmount
+  }, [userId]);
 
   const handleDelete = async (scheduleId) => {
     try {
-      const updatedItems = items.filter(item => item.id !== scheduleId);
-      setItems(updatedItems);
+      await deleteSchedule(scheduleId);
+      Alert.alert("Success", "Schedule deleted successfully.");
     } catch (error) {
-      console.error('Error deleting schedule:', error);
+      console.error("Error deleting schedule:", error.message);
+      Alert.alert("Error", "Failed to delete schedule.");
     }
   };
 
   const renderItem = ({ item }) => (
-    <View style={styles.item}>
+    <Pressable style={styles.item} onPress={() => Alert.alert(item.title)}>
       <Text style={styles.title}>{item.title}</Text>
-      <Text style={styles.time}>{item.time}</Text>
+      <Text style={styles.time}>
+        {item.startTime} - {item.endTime}
+      </Text>
       <Text>{item.description}</Text>
       <TouchableOpacity onPress={() => handleDelete(item.id)}>
         <Text style={styles.deleteButton}>Delete</Text>
       </TouchableOpacity>
-    </View>
+    </Pressable>
   );
 
   return (
@@ -70,11 +56,14 @@ const ScheduleScreen = ({ userId }) => {
         }}
         onDayPress={(day) => setSelectedDate(day.dateString)}
       />
+      <Text>Welcome User: {userId}</Text>
       <AgendaList
-        sections={[{
-          title: selectedDate,
-          data: items.filter(item => item.date === selectedDate),
-        }]}
+        sections={[
+          {
+            title: selectedDate,
+            data: items.filter((item) => item.date === selectedDate),
+          },
+        ]}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
       />
