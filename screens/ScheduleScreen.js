@@ -20,6 +20,7 @@ const ScheduleScreen = ({ route }) => {
 
   useEffect(() => {
     const unsubscribe = listenSchedules(userId, (schedules) => {
+      console.log("Fetched Schedules:", schedules); // Add logging to verify fetched schedules
       setItems(schedules);
     });
 

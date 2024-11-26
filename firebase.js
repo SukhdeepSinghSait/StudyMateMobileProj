@@ -75,6 +75,13 @@ const getSchedules = async (userId) => {
       schedules.push({ id: doc.id, ...doc.data() }); // Ensure data includes startTime, endTime, etc.
     });
 
+    // Sort schedules by start time
+    schedules.sort((a, b) => {
+      const timeA = new Date(`1970-01-01T${a.startTime}`);
+      const timeB = new Date(`1970-01-01T${b.startTime}`);
+      return timeA - timeB;
+    });
+
     return schedules;
   } catch (e) {
     console.error("Error fetching schedules:", e.message);
@@ -91,6 +98,15 @@ const listenSchedules = (userId, callback) => {
       snapshot.forEach((doc) => {
         schedules.push({ id: doc.id, ...doc.data() }); // Ensure the structure is correct
       });
+
+      // Sort schedules by start time
+      schedules.sort((a, b) => {
+        const timeA = new Date(`1970-01-01T${a.startTime}`);
+        const timeB = new Date(`1970-01-01T${b.startTime}`);
+        return timeA - timeB;
+      });
+
+      console.log("Sorted Schedules:", schedules); // Add logging to verify sorted schedules
       callback(schedules);
     });
   } catch (e) {

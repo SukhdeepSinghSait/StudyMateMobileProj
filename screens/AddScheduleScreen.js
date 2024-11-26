@@ -34,7 +34,7 @@ const AddScheduleScreen = ({ route, navigation }) => {
     try {
       const formattedData = {
         ...scheduleData,
-        date: scheduleData.date.toISOString().split("T")[0], // Format date as YYYY-MM-DD
+        date: scheduleData.date.toLocaleDateString('en-CA'), // Format date as YYYY-MM-DD in local time
         startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Format time
         endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Format time
       };
