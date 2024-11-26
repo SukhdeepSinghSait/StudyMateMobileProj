@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Text, View, TextInput, Button, StyleSheet, Alert, Platform, TouchableOpacity, Keyboard } from 'react-native';
+import { View, StyleSheet, Alert, Platform, TouchableOpacity, Keyboard } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { addSchedule } from '../firebase';
+import { TextInput, Button, Text, Provider as PaperProvider } from 'react-native-paper';
+import theme from '../theme'; // Import the custom theme
 
 const AddScheduleScreen = ({ route, navigation }) => {
   const { userId } = route.params || {}; // Safely access params
@@ -95,73 +97,82 @@ const AddScheduleScreen = ({ route, navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.header}>Add Event</Text>
-      <Text style={styles.label}>User ID: {userId}</Text>
+    <PaperProvider theme={theme}>
+      <View style={styles.container}>
+        <Text style={styles.header}>Add Event</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Title *"
-        value={scheduleData.title}
-        onChangeText={(text) => setScheduleData({ ...scheduleData, title: text })}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Description *"
-        value={scheduleData.description}
-        onChangeText={(text) => setScheduleData({ ...scheduleData, description: text })}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Location *"
-        value={scheduleData.location}
-        onChangeText={(text) => setScheduleData({ ...scheduleData, location: text })}
-      />
-
-      {/* Date Picker */}
-      <Text style={styles.label}>Selected Date: {scheduleData.date.toDateString()}</Text>
-      <TouchableOpacity onPress={openDatePicker} style={styles.pickerButton}>
-        <Text style={styles.pickerButtonText}>Select Date</Text>
-      </TouchableOpacity>
-      {showDatePicker && (
-        <DateTimePicker
-          value={scheduleData.date}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleDateChange}
+        <TextInput
+          label="Title *"
+          mode="outlined"
+          value={scheduleData.title}
+          onChangeText={(text) => setScheduleData({ ...scheduleData, title: text })}
+          style={styles.input}
+          theme={{ colors: { primary: theme.colors.primary } }}
         />
-      )}
-
-      {/* Start Time Picker */}
-      <Text style={styles.label}>Start Time: {scheduleData.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-      <TouchableOpacity onPress={openStartTimePicker} style={styles.pickerButton}>
-        <Text style={styles.pickerButtonText}>Select Start Time</Text>
-      </TouchableOpacity>
-      {showStartTimePicker && (
-        <DateTimePicker
-          value={scheduleData.startTime}
-          mode="time"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(event, time) => handleTimeChange('start', event, time)}
+        <TextInput
+          label="Description *"
+          mode="outlined"
+          value={scheduleData.description}
+          onChangeText={(text) => setScheduleData({ ...scheduleData, description: text })}
+          style={styles.input}
+          theme={{ colors: { primary: theme.colors.primary } }}
         />
-      )}
-
-      {/* End Time Picker */}
-      <Text style={styles.label}>End Time: {scheduleData.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-      <TouchableOpacity onPress={openEndTimePicker} style={styles.pickerButton}>
-        <Text style={styles.pickerButtonText}>Select End Time</Text>
-      </TouchableOpacity>
-      {showEndTimePicker && (
-        <DateTimePicker
-          value={scheduleData.endTime}
-          mode="time"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={(event, time) => handleTimeChange('end', event, time)}
+        <TextInput
+          label="Location *"
+          mode="outlined"
+          value={scheduleData.location}
+          onChangeText={(text) => setScheduleData({ ...scheduleData, location: text })}
+          style={styles.input}
+          theme={{ colors: { primary: theme.colors.primary } }}
         />
-      )}
 
-      <Button title="Add Schedule" onPress={handleSubmit} />
-    </View>
+        {/* Date Picker */}
+        <Text style={styles.label}>Selected Date: {scheduleData.date.toDateString()}</Text>
+        <TouchableOpacity onPress={openDatePicker} style={styles.pickerButton}>
+          <Text style={styles.pickerButtonText}>Select Date</Text>
+        </TouchableOpacity>
+        {showDatePicker && (
+          <DateTimePicker
+            value={scheduleData.date}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleDateChange}
+          />
+        )}
+
+        {/* Start Time Picker */}
+        <Text style={styles.label}>Start Time: {scheduleData.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+        <TouchableOpacity onPress={openStartTimePicker} style={styles.pickerButton}>
+          <Text style={styles.pickerButtonText}>Select Start Time</Text>
+        </TouchableOpacity>
+        {showStartTimePicker && (
+          <DateTimePicker
+            value={scheduleData.startTime}
+            mode="time"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={(event, time) => handleTimeChange('start', event, time)}
+          />
+        )}
+
+        {/* End Time Picker */}
+        <Text style={styles.label}>End Time: {scheduleData.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+        <TouchableOpacity onPress={openEndTimePicker} style={styles.pickerButton}>
+          <Text style={styles.pickerButtonText}>Select End Time</Text>
+        </TouchableOpacity>
+        {showEndTimePicker && (
+          <DateTimePicker
+            value={scheduleData.endTime}
+            mode="time"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={(event, time) => handleTimeChange('end', event, time)}
+          />
+        )}
+
+        <Button mode="contained" onPress={handleSubmit} style={styles.button} buttonColor={theme.colors.primary} textColor="#fff">
+          Add Schedule
+        </Button>
+      </View>
+    </PaperProvider>
   );
 };
 
@@ -182,15 +193,10 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   input: {
-    height: 50,
-    borderColor: '#ccc',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    marginVertical: 10,
+    marginBottom: 12,
   },
   pickerButton: {
-    backgroundColor: '#007bff',
+    backgroundColor: '#00adf5', // Blue color used in react-native-calendars
     padding: 10,
     borderRadius: 5,
     marginVertical: 8,
@@ -199,6 +205,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     textAlign: 'center',
+  },
+  button: {
+    marginTop: 16,
   },
 });
 

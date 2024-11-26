@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
+import { TextInput, Button, Text, Provider as PaperProvider } from "react-native-paper";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
+import theme from "../theme"; // Import the custom theme
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -22,27 +24,32 @@ const LoginScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Login</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <Button title="Login" onPress={handleLogin} />
-      <Text style={styles.link} onPress={() => navigation.navigate("SignUpScreen")}>
-        Don't have an account? Sign Up
-      </Text>
-    </View>
+    <PaperProvider theme={theme}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Login</Text>
+        <TextInput
+          label="Email"
+          mode="outlined"
+          value={email}
+          onChangeText={setEmail}
+          style={styles.input}
+        />
+        <TextInput
+          label="Password"
+          mode="outlined"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          style={styles.input}
+        />
+        <Button mode="contained" onPress={handleLogin} style={styles.button}>
+          Login
+        </Button>
+        <Text style={styles.link} onPress={() => navigation.navigate("SignUpScreen")}>
+          Don't have an account? Sign Up
+        </Text>
+      </View>
+    </PaperProvider>
   );
 };
 
@@ -50,25 +57,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
     padding: 16,
+    backgroundColor: "#fff",
   },
   title: {
     fontSize: 24,
     marginBottom: 20,
+    textAlign: "center",
   },
   input: {
-    width: "100%",
-    height: 50,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
     marginBottom: 12,
-    paddingHorizontal: 8,
+  },
+  button: {
+    marginTop: 16,
   },
   link: {
     marginTop: 16,
     color: "blue",
+    textAlign: "center",
     textDecorationLine: "underline",
   },
 });

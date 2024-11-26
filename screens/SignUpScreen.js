@@ -1,7 +1,9 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet, Alert } from "react-native";
+import { TextInput, Button, Text, Provider as PaperProvider } from "react-native-paper";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
+import theme from "../theme"; // Import the custom theme
 
 const SignUpScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
@@ -10,8 +12,8 @@ const SignUpScreen = ({ navigation }) => {
   const handleSignUp = () => {
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
-        Alert.alert("Account Created", "Your account has been created successfully!");
-        navigation.navigate("Login");
+        Alert.alert("Sign Up Successful", "You have successfully signed up!");
+        navigation.navigate("LoginScreen");
       })
       .catch((error) => {
         Alert.alert("Error", error.message);
@@ -19,27 +21,32 @@ const SignUpScreen = ({ navigation }) => {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sign Up</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <Button title="Sign Up" onPress={handleSignUp} />
-      <Text style={styles.link} onPress={() => navigation.navigate("Login")}>
-        Already have an account? Log In
-      </Text>
-    </View>
+    <PaperProvider theme={theme}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Sign Up</Text>
+        <TextInput
+          label="Email"
+          mode="outlined"
+          value={email}
+          onChangeText={setEmail}
+          style={styles.input}
+        />
+        <TextInput
+          label="Password"
+          mode="outlined"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+          style={styles.input}
+        />
+        <Button mode="contained" onPress={handleSignUp} style={styles.button}>
+          Sign Up
+        </Button>
+        <Text style={styles.link} onPress={() => navigation.navigate("LoginScreen")}>
+          Already have an account? Login
+        </Text>
+      </View>
+    </PaperProvider>
   );
 };
 
@@ -47,25 +54,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
-    alignItems: "center",
     padding: 16,
+    backgroundColor: "#fff",
   },
   title: {
     fontSize: 24,
     marginBottom: 20,
+    textAlign: "center",
   },
   input: {
-    width: "100%",
-    height: 50,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
     marginBottom: 12,
-    paddingHorizontal: 8,
+  },
+  button: {
+    marginTop: 16,
   },
   link: {
     marginTop: 16,
     color: "blue",
+    textAlign: "center",
     textDecorationLine: "underline",
   },
 });
