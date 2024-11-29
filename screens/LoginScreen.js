@@ -45,7 +45,7 @@ const LoginScreen = ({ navigation }) => {
         <Button mode="contained" onPress={handleLogin} style={styles.button}>
           Login
         </Button>
-        <Text style={styles.link} onPress={() => navigation.navigate("SignUpScreen")}>
+        <Text style={styles.link} onPress={() => navigation.navigate("SignUp")}>
           Don't have an account? Sign Up
         </Text>
       </View>

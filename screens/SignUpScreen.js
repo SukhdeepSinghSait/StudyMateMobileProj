@@ -13,7 +13,7 @@ const SignUpScreen = ({ navigation }) => {
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         Alert.alert("Sign Up Successful", "You have successfully signed up!");
-        navigation.navigate("LoginScreen");
+        navigation.navigate("Login");
       })
       .catch((error) => {
         Alert.alert("Error", error.message);
@@ -42,7 +42,7 @@ const SignUpScreen = ({ navigation }) => {
         <Button mode="contained" onPress={handleSignUp} style={styles.button}>
           Sign Up
         </Button>
-        <Text style={styles.link} onPress={() => navigation.navigate("LoginScreen")}>
+        <Text style={styles.link} onPress={() => navigation.navigate("Login")}>
           Already have an account? Login
         </Text>
       </View>
