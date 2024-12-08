@@ -44,26 +44,31 @@ const addSchedule = async (userId, scheduleData) => {
   if (
     !scheduleData ||
     !scheduleData.title ||
-    !scheduleData.date ||
-    !scheduleData.startTime ||
-    !scheduleData.endTime
+    !scheduleData.startDateTime ||
+    !scheduleData.endDateTime ||
+    !scheduleData.repeatDays
   ) {
     console.error("Error: Invalid schedule data", scheduleData);
     return;
   }
 
   try {
+    // Convert dates to UTC
+    const startDateTimeUTC = new Date(scheduleData.startDateTime).toISOString();
+    const endDateTimeUTC = new Date(scheduleData.endDateTime).toISOString();
+
     // Add the schedule to Firestore
     const docRef = await addDoc(collection(db, "schedules"), {
       userId,
       ...scheduleData,
+      startDateTime: startDateTimeUTC,
+      endDateTime: endDateTimeUTC,
     });
     console.log("Document written with ID: ", docRef.id);
   } catch (e) {
     console.error("Error adding document: ", e);
   }
 };
-
 
 const getSchedules = async (userId) => {
   try {
@@ -72,13 +77,13 @@ const getSchedules = async (userId) => {
 
     const schedules = [];
     querySnapshot.forEach((doc) => {
-      schedules.push({ id: doc.id, ...doc.data() }); // Ensure data includes startTime, endTime, etc.
+      schedules.push({ id: doc.id, ...doc.data() }); // Ensure data includes startDateTime, endDateTime, etc.
     });
 
     // Sort schedules by start time
     schedules.sort((a, b) => {
-      const timeA = new Date(`1970-01-01T${a.startTime}`);
-      const timeB = new Date(`1970-01-01T${b.startTime}`);
+      const timeA = new Date(a.startDateTime);
+      const timeB = new Date(b.startDateTime);
       return timeA - timeB;
     });
 
@@ -101,8 +106,8 @@ const listenSchedules = (userId, callback) => {
 
       // Sort schedules by start time
       schedules.sort((a, b) => {
-        const timeA = new Date(`1970-01-01T${a.startTime}`);
-        const timeB = new Date(`1970-01-01T${b.startTime}`);
+        const timeA = new Date(a.startDateTime);
+        const timeB = new Date(b.startDateTime);
         return timeA - timeB;
       });
 

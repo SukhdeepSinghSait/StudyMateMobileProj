@@ -1,56 +1,112 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Alert, Platform, TouchableOpacity, Keyboard } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import { addSchedule } from '../firebase';
-import { TextInput, Button, Text, Provider as PaperProvider } from 'react-native-paper';
-import theme from '../theme'; // Import the custom theme
+// AddScheduleScreen.js
+
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Alert, TouchableOpacity, Keyboard, ScrollView } from 'react-native';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { addSchedule, getSchedules } from '../firebase'; // Ensure getSchedules is imported
+import { TextInput, Button, Text, Provider as PaperProvider, Checkbox, RadioButton, Appbar } from 'react-native-paper';
+import theme from '../theme';
+
+const daysOfWeek = [
+  { name: 'Sunday', index: 0 },
+  { name: 'Monday', index: 1 },
+  { name: 'Tuesday', index: 2 },
+  { name: 'Wednesday', index: 3 },
+  { name: 'Thursday', index: 4 },
+  { name: 'Friday', index: 5 },
+  { name: 'Saturday', index: 6 },
+];
 
 const AddScheduleScreen = ({ route, navigation }) => {
-  const { userId } = route.params || {}; // Safely access params
+  const { userId } = route.params || {};
   if (!userId) {
-    return <Text>User ID is not available!</Text>; // Error handling for missing userId
+    return <Text>User ID is not available!</Text>;
   }
+
   const [scheduleData, setScheduleData] = useState({
     title: '',
-    date: new Date(),
-    startTime: new Date(),
-    endTime: new Date(),
+    startDateTime: new Date(),
+    endDateTime: new Date(),
     description: '',
     location: '',
+    repeatDays: [],
   });
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
-  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
+  const [isDatePickerVisible, setDatePickerVisibility] = useState({ start: false, end: false });
+  const [repeatOption, setRepeatOption] = useState('Never');
 
   const handleSubmit = async () => {
-    const { title, description, location, startTime, endTime } = scheduleData;
+    const { title, description, location, startDateTime, endDateTime, repeatDays } = scheduleData;
 
-    // Validation for empty fields
-    if (!title || !description || !location) {
-      Alert.alert("Error", "All fields are required.");
+    // Validations
+    if (!title) {
+      Alert.alert("Error", "Please enter a title.");
+      return;
+    }
+    if (!description) {
+      Alert.alert("Error", "Please enter a description.");
+      return;
+    }
+    if (!location) {
+      Alert.alert("Error", "Please enter a location.");
+      return;
+    }
+    if (startDateTime >= endDateTime) {
+      Alert.alert("Error", "Start date and time must be before end date and time.");
+      return;
+    }
+    if (repeatOption !== 'Never' && repeatDays.length === 0) {
+      Alert.alert("Error", "Please select at least one repeat day or set repeat to 'Never'.");
       return;
     }
 
     try {
+      // Fetch existing schedules
+      const existingSchedules = await getSchedules(userId);
+
+      // Check for time clashes
+      const hasClash = existingSchedules.some((schedule) => {
+        const existingStart = new Date(schedule.startDateTime);
+        const existingEnd = new Date(schedule.endDateTime);
+
+        // Check if there's an overlap
+        const overlap =
+          (startDateTime < existingEnd && endDateTime > existingStart) &&
+          (
+            // For non-repeating schedules
+            (repeatOption === 'Never' && schedule.repeatDays.length === 0) ||
+            // For repeating schedules, check if repeat days overlap
+            (repeatOption !== 'Never' && schedule.repeatDays.some(day => repeatDays.includes(day)))
+          );
+
+        return overlap;
+      });
+
+      if (hasClash) {
+        Alert.alert("Error", "This schedule overlaps with an existing schedule.");
+        return;
+      }
+
+      // Proceed to add the schedule
       const formattedData = {
         ...scheduleData,
-        date: scheduleData.date.toLocaleDateString('en-CA'), // Format date as YYYY-MM-DD in local time
-        startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Format time
-        endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), // Format time
+        startDateTime: scheduleData.startDateTime.toISOString(),
+        endDateTime: scheduleData.endDateTime.toISOString(),
+        repeatDays: repeatOption === 'Never' ? [] : repeatDays,
       };
 
       await addSchedule(userId, formattedData);
       Alert.alert("Success", "Schedule added successfully.");
 
-      // Clear the form fields after successful addition
+      // Clear the form fields
       setScheduleData({
         title: '',
-        date: new Date(),
-        startTime: new Date(),
-        endTime: new Date(),
+        startDateTime: new Date(),
+        endDateTime: new Date(),
         description: '',
         location: '',
+        repeatDays: [],
       });
+      setRepeatOption('Never');
 
       // Navigate back
       navigation.goBack();
@@ -60,132 +116,174 @@ const AddScheduleScreen = ({ route, navigation }) => {
     }
   };
 
-  const handleDateChange = (event, date) => {
-    setShowDatePicker(false);
-    if (date) {
-      setScheduleData({ ...scheduleData, date });
-    }
-  };
-
-  const handleTimeChange = (pickerType, event, time) => {
+  const handleConfirm = (pickerType, dateTime) => {
     if (pickerType === 'start') {
-      setShowStartTimePicker(false);
-      if (time) {
-        setScheduleData({ ...scheduleData, startTime: time });
-      }
+      setScheduleData({ ...scheduleData, startDateTime: dateTime });
+      setDatePickerVisibility({ ...isDatePickerVisible, start: false });
     } else if (pickerType === 'end') {
-      setShowEndTimePicker(false);
-      if (time) {
-        setScheduleData({ ...scheduleData, endTime: time });
-      }
+      setScheduleData({ ...scheduleData, endDateTime: dateTime });
+      setDatePickerVisibility({ ...isDatePickerVisible, end: false });
     }
   };
 
-  const openDatePicker = () => {
-    Keyboard.dismiss(); // Close the keyboard before opening the picker
-    setShowDatePicker(true);
+  const showDatePicker = (pickerType) => {
+    Keyboard.dismiss();
+    setDatePickerVisibility({ ...isDatePickerVisible, [pickerType]: true });
   };
 
-  const openStartTimePicker = () => {
-    Keyboard.dismiss(); // Close the keyboard before opening the picker
-    setShowStartTimePicker(true);
+  const hideDatePicker = (pickerType) => {
+    setDatePickerVisibility({ ...isDatePickerVisible, [pickerType]: false });
   };
 
-  const openEndTimePicker = () => {
-    Keyboard.dismiss(); // Close the keyboard before opening the picker
-    setShowEndTimePicker(true);
+  const toggleRepeatDay = (dayIndex) => {
+    setScheduleData((prevState) => {
+      const repeatDays = prevState.repeatDays.includes(dayIndex)
+        ? prevState.repeatDays.filter((d) => d !== dayIndex)
+        : [...prevState.repeatDays, dayIndex];
+      return { ...prevState, repeatDays };
+    });
   };
+
+  // Determine if the event is a single-day event
+  const isSingleDay = scheduleData.startDateTime.toDateString() === scheduleData.endDateTime.toDateString();
+
+  // If the event becomes single-day and repeat option is not 'Never', reset it
+  useEffect(() => {
+    if (isSingleDay && repeatOption !== 'Never') {
+      setRepeatOption('Never');
+      setScheduleData((prev) => ({ ...prev, repeatDays: [] }));
+    }
+  }, [isSingleDay]);
 
   return (
     <PaperProvider theme={theme}>
-      <View style={styles.container}>
-        <Text style={styles.header}>Add Event</Text>
+      <View style={{ flex: 1 }}>
+        {/* Custom App Bar with Back Button */}
+        <Appbar.Header style={styles.appbar}>
+          <Appbar.BackAction onPress={() => navigation.goBack()} />
+          <Appbar.Content title="Add Event" />
+        </Appbar.Header>
 
-        <TextInput
-          label="Title *"
-          mode="outlined"
-          value={scheduleData.title}
-          onChangeText={(text) => setScheduleData({ ...scheduleData, title: text })}
-          style={styles.input}
-          theme={{ colors: { primary: theme.colors.primary } }}
-        />
-        <TextInput
-          label="Description *"
-          mode="outlined"
-          value={scheduleData.description}
-          onChangeText={(text) => setScheduleData({ ...scheduleData, description: text })}
-          style={styles.input}
-          theme={{ colors: { primary: theme.colors.primary } }}
-        />
-        <TextInput
-          label="Location *"
-          mode="outlined"
-          value={scheduleData.location}
-          onChangeText={(text) => setScheduleData({ ...scheduleData, location: text })}
-          style={styles.input}
-          theme={{ colors: { primary: theme.colors.primary } }}
-        />
+        <ScrollView contentContainerStyle={styles.scrollContainer}>
+          <View style={styles.container}>
 
-        {/* Date Picker */}
-        <Text style={styles.label}>Selected Date: {scheduleData.date.toDateString()}</Text>
-        <TouchableOpacity onPress={openDatePicker} style={styles.pickerButton}>
-          <Text style={styles.pickerButtonText}>Select Date</Text>
-        </TouchableOpacity>
-        {showDatePicker && (
-          <DateTimePicker
-            value={scheduleData.date}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={handleDateChange}
-          />
-        )}
+            <TextInput
+              label="Title *"
+              mode="outlined"
+              value={scheduleData.title}
+              onChangeText={(text) => setScheduleData({ ...scheduleData, title: text })}
+              style={styles.input}
+              theme={{ colors: { primary: theme.colors.primary } }}
+            />
+            <TextInput
+              label="Description *"
+              mode="outlined"
+              value={scheduleData.description}
+              onChangeText={(text) => setScheduleData({ ...scheduleData, description: text })}
+              style={styles.input}
+              theme={{ colors: { primary: theme.colors.primary } }}
+            />
+            <TextInput
+              label="Location *"
+              mode="outlined"
+              value={scheduleData.location}
+              onChangeText={(text) => setScheduleData({ ...scheduleData, location: text })}
+              style={styles.input}
+              theme={{ colors: { primary: theme.colors.primary } }}
+            />
 
-        {/* Start Time Picker */}
-        <Text style={styles.label}>Start Time: {scheduleData.startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-        <TouchableOpacity onPress={openStartTimePicker} style={styles.pickerButton}>
-          <Text style={styles.pickerButtonText}>Select Start Time</Text>
-        </TouchableOpacity>
-        {showStartTimePicker && (
-          <DateTimePicker
-            value={scheduleData.startTime}
-            mode="time"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={(event, time) => handleTimeChange('start', event, time)}
-          />
-        )}
+            {/* Start DateTime Picker */}
+            <Text style={styles.label}>Start Date & Time: {scheduleData.startDateTime.toLocaleString()}</Text>
+            <TouchableOpacity onPress={() => showDatePicker('start')} style={styles.pickerButton}>
+              <Text style={styles.pickerButtonText}>Select Start Date & Time</Text>
+            </TouchableOpacity>
+            <DateTimePickerModal
+              isVisible={isDatePickerVisible.start}
+              mode="datetime"
+              onConfirm={(date) => handleConfirm('start', date)}
+              onCancel={() => hideDatePicker('start')}
+              minimumDate={new Date()} // Disable past dates
+            />
 
-        {/* End Time Picker */}
-        <Text style={styles.label}>End Time: {scheduleData.endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-        <TouchableOpacity onPress={openEndTimePicker} style={styles.pickerButton}>
-          <Text style={styles.pickerButtonText}>Select End Time</Text>
-        </TouchableOpacity>
-        {showEndTimePicker && (
-          <DateTimePicker
-            value={scheduleData.endTime}
-            mode="time"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            onChange={(event, time) => handleTimeChange('end', event, time)}
-          />
-        )}
+            {/* End DateTime Picker */}
+            <Text style={styles.label}>End Date & Time: {scheduleData.endDateTime.toLocaleString()}</Text>
+            <TouchableOpacity onPress={() => showDatePicker('end')} style={styles.pickerButton}>
+              <Text style={styles.pickerButtonText}>Select End Date & Time</Text>
+            </TouchableOpacity>
+            <DateTimePickerModal
+              isVisible={isDatePickerVisible.end}
+              mode="datetime"
+              onConfirm={(date) => handleConfirm('end', date)}
+              onCancel={() => hideDatePicker('end')}
+              minimumDate={scheduleData.startDateTime} // End date can't be before start date
+            />
 
-        <Button mode="contained" onPress={handleSubmit} style={styles.button} buttonColor={theme.colors.primary} textColor="#fff">
-          Add Schedule
-        </Button>
+            {/* Repeat Days */}
+            <Text style={styles.label}>Repeat:</Text>
+            <RadioButton.Group onValueChange={value => setRepeatOption(value)} value={repeatOption}>
+              <View style={styles.radioButtonContainer}>
+                <RadioButton value="Never" />
+                <Text>Never</Text>
+              </View>
+              {!isSingleDay && (
+                <View style={styles.radioButtonContainer}>
+                  <RadioButton value="Custom" />
+                  <Text>Custom</Text>
+                </View>
+              )}
+            </RadioButton.Group>
+
+            {repeatOption === 'Custom' && !isSingleDay && (
+              <View style={styles.checkboxContainer}>
+                {daysOfWeek.map((day) => (
+                  <View key={day.index} style={styles.checkbox}>
+                    <Checkbox
+                      status={scheduleData.repeatDays.includes(day.index) ? 'checked' : 'unchecked'}
+                      onPress={() => toggleRepeatDay(day.index)}
+                    />
+                    <Text>{day.name}</Text>
+                  </View>
+                ))}
+              </View>
+            )}
+
+            <Button
+              mode="contained"
+              onPress={handleSubmit}
+              style={[styles.button, { backgroundColor: theme.colors.primary }]}
+              labelStyle={{ color: '#fff', fontSize: 16 }}
+            >
+              Add Schedule
+            </Button>
+          </View>
+        </ScrollView>
       </View>
     </PaperProvider>
   );
 };
 
 const styles = StyleSheet.create({
+  appbar: {
+    elevation: 4, // Adds shadow for iOS
+    shadowColor: '#000', // Adds shadow for Android
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: 16,
+    backgroundColor: '#fff',
+  },
   container: {
     flex: 1,
-    padding: 16,
+    // padding: 16, // Removed to avoid double padding with scrollContainer
     backgroundColor: '#fff',
   },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 16,
+    textAlign: 'center', // Center the header if desired
   },
   label: {
     fontSize: 16,
@@ -196,7 +294,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   pickerButton: {
-    backgroundColor: '#00adf5', // Blue color used in react-native-calendars
+    backgroundColor: '#00adf5',
     padding: 10,
     borderRadius: 5,
     marginVertical: 8,
@@ -206,8 +304,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
   },
+  radioButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 12,
+  },
+  checkbox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 10,
+  },
   button: {
     marginTop: 16,
+  },
+  disabledText: {
+    color: '#aaa',
   },
 });
 
