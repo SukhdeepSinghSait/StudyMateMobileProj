@@ -1,7 +1,7 @@
 // LoginScreen.js
 
 import React, { useState } from "react";
-import { View, StyleSheet, Alert } from "react-native";
+import { View, StyleSheet, Alert, Image } from "react-native";
 import { TextInput, Button, Text, Provider as PaperProvider, ActivityIndicator } from "react-native-paper";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
@@ -40,6 +40,7 @@ const LoginScreen = ({ navigation }) => {
   return (
     <PaperProvider theme={theme}>
       <View style={styles.container}>
+      <Image source={require("../assets/logo.png")} style={styles.logo} />
         <Text style={styles.title}>Login</Text>
         <TextInput
           label="Email"
@@ -85,6 +86,15 @@ const styles = StyleSheet.create({
     padding: 16,
     backgroundColor: "#fff",
   },
+  logo: {
+    width: 300,
+    height: 300,
+    borderRadius: 50,
+    alignSelf: "center",
+    marginBottom: -50,
+    
+    
+  },
   title: {
     fontSize: 24,
     marginBottom: 20,
@@ -98,7 +108,7 @@ const styles = StyleSheet.create({
   },
   link: {
     marginTop: 16,
-    color: "blue",
+    color: "black",
     textAlign: "center",
     textDecorationLine: "underline",
   },

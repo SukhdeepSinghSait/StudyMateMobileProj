@@ -4,7 +4,7 @@ const theme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#00adf5', // Blue color
+    primary: '#1E282D', // Blue color WAS 00ADF5
     accent: '#ffffff', // White color
     background: '#ffffff', // White background
     surface: '#ffffff', // White surface

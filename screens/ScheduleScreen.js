@@ -173,7 +173,6 @@ const ScheduleScreen = ({ route, navigation }) => {
     </PaperProvider>
   );
 };
-
 const styles = StyleSheet.create({
   loader: {
     flex: 1,
@@ -182,18 +181,18 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa', // Light gray background
+    backgroundColor: theme.colors.background,
   },
   card: {
     marginHorizontal: 16,
     marginVertical: 8,
     borderRadius: 12,
-    backgroundColor: '#ffffff',
+    backgroundColor: theme.colors.surface,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3, // Android shadow
+    elevation: 3,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -203,7 +202,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 18,
-    color: '#333333',
+    color: theme.colors.text,
     fontWeight: 'bold',
   },
   cardRow: {
@@ -214,11 +213,11 @@ const styles = StyleSheet.create({
   cardText: {
     marginLeft: 8,
     fontSize: 14,
-    color: '#555555',
+    color: theme.colors.text,
   },
   cardDescription: {
     fontSize: 14,
-    color: '#555555',
+    color: theme.colors.placeholder,
     marginTop: 4,
   },
   fab: {
@@ -229,5 +228,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.primary,
   },
 });
+
 
 export default ScheduleScreen;

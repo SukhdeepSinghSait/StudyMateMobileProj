@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   pickerButton: {
-    backgroundColor: '#00adf5',
+    backgroundColor: '#1E282D',
     padding: 10,
     borderRadius: 5,
     marginVertical: 8,

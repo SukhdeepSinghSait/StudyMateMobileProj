@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   },
   link: {
     marginTop: 16,
-    color: "blue",
+    color: "black",
     textAlign: "center",
     textDecorationLine: "underline",
   },

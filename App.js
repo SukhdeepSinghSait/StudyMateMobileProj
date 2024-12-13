@@ -9,15 +9,17 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 
 import LoginScreen from "./screens/LoginScreen";
 import SignUpScreen from "./screens/SignUpScreen";
-import ScheduleStack from "./navigation/ScheduleStack"; // Updated import
+import ScheduleStack from "./navigation/ScheduleStack";
 import ProfileScreen from "./screens/ProfileScreen";
+import NotesScreen from "./screens/NotesScreen";
+import DashboardScreen from "./screens/DashboardScreen"; // Import DashboardScreen
 import { auth } from './firebase';
 
 // Create stack and tab navigators
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-// Tab Navigator for Schedule and Profile
+// Tab Navigator for Dashboard, Schedule, Profile, and Notes
 const TabNavigator = ({ route }) => {
   const { userId } = route.params || {};
 
@@ -27,23 +29,41 @@ const TabNavigator = ({ route }) => {
         screenOptions={({ route }) => ({
           tabBarIcon: ({ focused, color, size }) => {
             let iconName;
-            if (route.name === "Schedule") {
+            if (route.name === "Dashboard") {
+              iconName = focused ? "home" : "home-outline";
+            } else if (route.name === "Schedule") {
               iconName = focused ? "calendar" : "calendar-outline";
+            } else if (route.name === "Notes") {
+              iconName = focused ? "book" : "book-outline";
             } else if (route.name === "Profile") {
               iconName = focused ? "person" : "person-outline";
             }
             return <Ionicons name={iconName} size={size} color={color} />;
           },
-          tabBarActiveTintColor: "#00adf5",
-          tabBarInactiveTintColor: "gray",
+          tabBarActiveTintColor: "#9ac2eb", // was 00adf
+          tabBarInactiveTintColor: "1E282D",
         })}
       >
         <Tab.Screen
-          name="Schedule"
-          component={ScheduleStack} // Use ScheduleStack instead of ScheduleScreen
-          initialParams={{ userId }} // Pass userId here
+          name="Dashboard"
+          component={DashboardScreen} // Add DashboardScreen here
+          initialParams={{ userId }}
           options={{ headerShown: false }}
         />
+
+        <Tab.Screen
+          name="Schedule"
+          component={ScheduleStack}
+          initialParams={{ userId }}
+          options={{ headerShown: false }}
+        />
+        
+        <Tab.Screen
+          name="Notes"
+          component={NotesScreen}
+          options={{ headerShown: false }}
+        />
+
         <Tab.Screen
           name="Profile"
           component={ProfileScreen}
@@ -60,8 +80,8 @@ export default function App() {
     <NavigationContainer>
       <StatusBar
         barStyle={Platform.OS === "ios" ? "dark-content" : "dark-content"}
-        backgroundColor="#fff" // Matches background of SafeAreaView
-        translucent={true} // Makes status bar transparent
+        backgroundColor="#fff"
+        translucent={true}
       />
       <Stack.Navigator initialRouteName="Login">
         {/* Login and SignUp Screens */}
@@ -72,7 +92,7 @@ export default function App() {
         <Stack.Screen
           name="Main"
           component={TabNavigator}
-          options={{ headerShown: false }} // Hide header for Main
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
@@ -82,7 +102,7 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#fff", // Optional: Set a background color for better visuals
+    backgroundColor: "#fff",
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
 });
